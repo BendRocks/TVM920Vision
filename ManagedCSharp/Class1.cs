@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Imaging;
+using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -45,12 +47,31 @@ namespace ManagedCSharp
         /// </summary>
         /// <param name="byteCount"></param>
         /// <returns></returns>
-        public static byte[] GetData(ref int byteCount)
+        public static void GetData(byte[] data, ref int byteCount)
+        {
+           
+
+            Bitmap bmp = Camera.GetBitmap();
+
+            Stopwatch sw = Stopwatch.StartNew();
+
+            byte[] localData = ConvertBitmapToPixelArray(bmp);
+            byteCount = localData.Length;
+
+            sw.Stop();
+            long elapsed = sw.ElapsedMilliseconds;
+
+            Array.Copy(localData, data, byteCount);
+            
+        }
+
+        public static byte[] GetPng(ref int byteCount)
         {
             Bitmap bmp = Camera.GetBitmap();
-           
-            byte[] data = ConvertBitmapToPixelArray(bmp);
+
+            byte[] data = ConvertBitmapToPngArray(bmp);
             byteCount = data.Length;
+
             return data;
         }
 
@@ -78,6 +99,15 @@ namespace ManagedCSharp
             Marshal.Copy(bmpData.Scan0, data, 4, length-4);
             bmp.UnlockBits(bmpData);
             return data;
+        }
+
+        public static byte[] ConvertBitmapToPngArray(Bitmap bmp)
+        {
+            using (var stream = new MemoryStream())
+            {
+                bmp.Save(stream, System.Drawing.Imaging.ImageFormat.Png);
+                return stream.ToArray();
+            }
         }
     }
 }

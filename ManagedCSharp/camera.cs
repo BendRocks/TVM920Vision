@@ -84,21 +84,22 @@ namespace ManagedCSharp
                     Bmp.Dispose();
 
                 // Regardless of source, we always want a 32bpp rgb bitmap
+                //Bmp = (Bitmap)eventArgs.Frame.Clone();
                 Bmp = (Bitmap)eventArgs.Frame.Clone(new Rectangle(0, 0, eventArgs.Frame.Width, eventArgs.Frame.Height), System.Drawing.Imaging.PixelFormat.Format32bppRgb);
             }
         }
 
-        internal static Bitmap FlipBasedOnInput(Bitmap bmp)
-        {
-            switch (_Input)
-            {
-                case InputEnum.DownCam: bmp.RotateFlip(RotateFlipType.RotateNoneFlipNone); break;
-                case InputEnum.UpCam: bmp.RotateFlip(RotateFlipType.RotateNoneFlipNone); break;
-                default: throw new NotImplementedException("Unknown in FlipBasedOnInput()");
-            }
+        //internal static Bitmap FlipBasedOnInput(Bitmap bmp)
+        //{
+        //    switch (_Input)
+        //    {
+        //        case InputEnum.DownCam: bmp.RotateFlip(RotateFlipType.RotateNoneFlipNone); break;
+        //        case InputEnum.UpCam: bmp.RotateFlip(RotateFlipType.RotateNoneFlipNone); break;
+        //        default: throw new NotImplementedException("Unknown in FlipBasedOnInput()");
+        //    }
 
-            return bmp;
-        }
+        //    return bmp;
+        //}
 
         /// <summary>
         /// Returns the last bitmap captured from the camera. The size may vary, but the bit depth will always be 32bppRGB
@@ -112,10 +113,13 @@ namespace ManagedCSharp
             // disposing when finished
             lock (Bmp)
             {
-                userBmp = (Bitmap)Bmp.Clone();
+                if ( (Bmp.Width == 720) && (Bmp.Height == 576) )
+                    userBmp = (Bitmap)Bmp.Clone();
+                else
+                    userBmp = new Bitmap(Bmp, 720, 576);
             }
 
-            return FlipBasedOnInput(userBmp);
+            return userBmp;
         }
 
         internal static void Close()

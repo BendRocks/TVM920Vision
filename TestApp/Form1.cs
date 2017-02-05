@@ -2,8 +2,10 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
+using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Imaging;
+using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -19,9 +21,14 @@ namespace TVM920_v2
         [DllImport("TVM920Vision.dll", CallingConvention = CallingConvention.Cdecl)]
         static extern void SetInput(int input);
         [DllImport("TVM920Vision.dll", CallingConvention = CallingConvention.Cdecl)]
-        static extern IntPtr GetData(ref int byteCount);
+        static extern void GetData(IntPtr buffer, ref int byteCount);
         [DllImport("TVM920Vision.dll", CallingConvention = CallingConvention.Cdecl)]
-        static extern int Add(int i, int j);           
+        static extern IntPtr GetPng(ref int byteCount);
+        [DllImport("TVM920Vision.dll", CallingConvention = CallingConvention.Cdecl)]
+        static extern int Add(int i, int j);
+
+        IntPtr unmanagedPointer = Marshal.AllocHGlobal(720 * 576 * 4 + 4);
+
 
         public Form1()
         {
@@ -38,13 +45,45 @@ namespace TVM920_v2
             //Text = Add(25, 5).ToString();
 
             int byteCount = 0;
-            IntPtr dataPtr = GetData(ref byteCount);
+            Stopwatch sw = Stopwatch.StartNew();
+
+            GetData(unmanagedPointer, ref byteCount);
 
             byte[] data = new byte[byteCount];
 
-            Marshal.Copy(dataPtr, data, 0, byteCount);
+            Marshal.Copy(unmanagedPointer, data, 0, byteCount);
 
-            pictureBox1.Image = ConvertPixelArrayToBitmap(data);
+            sw.Stop();
+            long ms = sw.ElapsedMilliseconds;
+            
+            Bitmap bmp = ConvertPixelArrayToBitmap(data);
+
+            Text = bmp.Size.ToString() + "   " + sw.ElapsedMilliseconds.ToString();
+            pictureBox1.Image = bmp;
+            pictureBox1.SizeMode = PictureBoxSizeMode.Zoom;
+        }
+
+        private void button2_Click(object sender, EventArgs e)
+        {
+            Stopwatch sw = Stopwatch.StartNew();
+
+            int byteCount = 0;
+            IntPtr dataPtr = GetPng(ref byteCount);
+            byte[] data = new byte[byteCount];
+            Marshal.Copy(dataPtr, data, 0, byteCount);
+            Bitmap bmp;
+
+            using (var stream = new MemoryStream(data))
+            {
+                bmp = (Bitmap)Image.FromStream(stream);
+            }
+
+            sw.Stop();
+
+            Text = bmp.Size.ToString() + "   " + sw.ElapsedMilliseconds.ToString();
+            pictureBox1.Image = bmp;
+            pictureBox1.SizeMode = PictureBoxSizeMode.Zoom;
+
         }
 
         private Bitmap ConvertPixelArrayToBitmap(byte[] pixelArray)
@@ -68,5 +107,7 @@ namespace TVM920_v2
             else if (radioButton2.Checked)
                 SetInput(1);
         }
+
+        
     }
 }

@@ -26,9 +26,14 @@ namespace ManagedDLL {
 			ManagedCSharp::ManagedClass::SetInput(input);
 		}
 
-		array<unsigned char>^ GetData(int* byteCount)
+		void GetData(array<unsigned char>^ buf, int* byteCount)
 		{
-			return ManagedCSharp::ManagedClass::GetData(*byteCount);
+			ManagedCSharp::ManagedClass::GetData(buf, *byteCount);
+		}
+
+		array<unsigned char>^ GetPng(int* byteCount)
+		{
+			return ManagedCSharp::ManagedClass::GetPng(*byteCount);
 		}
 
 		int Add(int i, int j)
@@ -50,10 +55,25 @@ __declspec(dllexport) void __cdecl DLL_SetInput(int input)
 	work.SetInput(input);
 }
 
-__declspec(dllexport) unsigned char* __cdecl DLL_GetData(int* byteCount)
+__declspec(dllexport) void __cdecl DLL_GetData(unsigned char* buf, int* byteCount)
 {
 	ManagedDLL::DoWork work;
-	array<unsigned char>^ mba = work.GetData(byteCount);
+	array<unsigned char>^ mba = gcnew array<unsigned char>(720 * 576 * 4 + 4);
+	//array<unsigned char>^ mba= work.GetData(buf, byteCount);
+	work.GetData(mba, byteCount);
+
+	//unsigned char * buf = new unsigned char[mba->Length];
+	Marshal::Copy(mba, 0, (IntPtr)buf, mba->Length);
+
+	//delete mba;
+
+	//return buf;
+}
+
+__declspec(dllexport) unsigned char* __cdecl DLL_GetPng(int* byteCount)
+{
+	ManagedDLL::DoWork work;
+	array<unsigned char>^ mba = work.GetPng(byteCount);
 
 	unsigned char * buf = new unsigned char[mba->Length];
 	Marshal::Copy(mba, 0, (IntPtr)buf, mba->Length);
